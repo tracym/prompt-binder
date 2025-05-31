@@ -16,41 +16,79 @@
     (with-current-buffer response-buffer
       (erase-buffer)
       (insert (format "Prompt: %s\n\n" content))
-      (insert "Response:\n")
       (setq start-marker (point-marker)))
 
     ;; Display the buffer
     (pop-to-buffer response-buffer)
 
-    (llm-chat-streaming provider
-                        (llm-make-chat-prompt content :context context)
-                        (lambda (text)
-                          ;; This callback is called for each chunk of streamed text
-                          (with-current-buffer response-buffer
-                            (save-excursion
-                              (goto-char (point-max))
-                              (insert text))
-                            ;; Auto-scroll to show new content
-                            (when (get-buffer-window response-buffer)
-                              (with-selected-window (get-buffer-window response-buffer)
-                                (goto-char (point-max))))))
-                        (lambda (text)
-                          ;; Success callback - called when streaming is complete
-                          (with-current-buffer response-buffer
-                            (save-excursion
-                              (goto-char (point-max))
-                              (insert "\n\n--- Response Complete ---"))))
-                        (lambda (type message)
-                          ;; Error callback
-                          (with-current-buffer response-buffer
-                            (save-excursion
-                              (goto-char (point-max))
-                              (insert (format "\n\nError (%s): %s" type message))))))))
+    (let ((last-inserted-length 0)
+          (spinner-chars ["⠋" "⠙" "⠹" "⠸" "⠼" "⠴" "⠦" "⠧" "⠇" "⠏"])
+          (spinner-index 0)
+          (spinner-timer nil)
+          (spinner-marker nil)
+          (first-response-received nil))
+
+      ;; Function to update spinner
+      (defun update-spinner ()
+        (when (and spinner-marker (buffer-live-p response-buffer))
+          (with-current-buffer response-buffer
+            (save-excursion
+              (goto-char spinner-marker)
+              (delete-char 1)
+              (insert (aref spinner-chars spinner-index))
+              (setq spinner-index (mod (1+ spinner-index) (length spinner-chars)))))))
+
+      ;; Function to start spinner
+      (defun start-spinner ()
+        (with-current-buffer response-buffer
+          (save-excursion
+            (goto-char (point-max))
+            (insert (aref spinner-chars 0) " Waiting for response...")
+            (setq spinner-marker (1- (point)))))
+        (setq spinner-timer (run-with-timer 0.1 0.1 #'update-spinner)))
+
+      ;; Function to stop spinner
+      (defun stop-spinner ()
+        (when spinner-timer
+          (cancel-timer spinner-timer)
+          (setq spinner-timer nil))
+        (when (and spinner-marker (buffer-live-p response-buffer))
+          (with-current-buffer response-buffer
+            (save-excursion
+              (goto-char spinner-marker)
+              (delete-region spinner-marker (line-end-position))))))
+
+      ;; Start the spinner
+      (start-spinner)
+
+      (llm-chat-streaming provider
+                          (llm-make-chat-prompt content :context context)
+                          (lambda (text)
+                            ;;(erase-buffer)
+                            ;;(insert "Waiting for llm response...")
+                            (unless first-response-received
+                              (stop-spinner)
+                              (setq first-response-received t))
+                            )
+                          (lambda (text)
+                            ;; Success callback - called when streaming is complete
+                            (with-current-buffer response-buffer
+                              (save-excursion
+                                (goto-char (point-max))
+                                (insert "\n\nResponse:\n\n")
+                                (insert text)
+                                (insert "\n\n--- Response Complete ---"))))
+                          (lambda (type message)
+                            ;; Error callback
+                            (with-current-buffer response-buffer
+                              (save-excursion
+                                (goto-char (point-max))
+                                (insert (format "\n\nError (%s): %s" type message)))))))))
 
 
 
 
-;;(fmakunbound 'prompt-lib-llm-stream-to-buffer)
+(fmakunbound 'prompt-lib-llm-stream-to-buffer)
 
 
 
