@@ -43,7 +43,7 @@
         (with-current-buffer response-buffer
           (save-excursion
             (goto-char (point-max))
-            (insert (aref spinner-chars 0) " Waiting for response...")
+            (insert " Waiting for response  ")
             (setq spinner-marker (1- (point)))))
         (setq spinner-timer (run-with-timer 0.1 0.1 #'update-spinner)))
 
@@ -64,12 +64,7 @@
       (llm-chat-streaming provider
                           (llm-make-chat-prompt content :context context)
                           (lambda (text)
-                            ;;(erase-buffer)
-                            ;;(insert "Waiting for llm response...")
-                            (unless first-response-received
-                              (stop-spinner)
-                              (setq first-response-received t))
-                            )
+                            (update-spinner))
                           (lambda (text)
                             ;; Success callback - called when streaming is complete
                             (with-current-buffer response-buffer
