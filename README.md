@@ -97,7 +97,11 @@ Use the `defprompt` macro to create your own AI-powered commands:
 ```elisp
 (defprompt :function-name code-reviewer
            :content "Please review this code for potential issues, bugs, and improvements."
-           :context (format "You are an experienced software engineer conducting a thorough code review. Focus on correctness, performance, security, and maintainability. Use the following code for your review %s" (buffer-substring-no-properties (point-min) (point-max)))
+           :context (format "You are an experienced software engineer conducting a 
+                             thorough code review. Focus on correctness, performance, 
+                             security, and maintainability. 
+                             Use the following code for your review %s" 
+                             (buffer-substring-no-properties (point-min) (point-max)))
            :provider (make-llm-ollama :chat-model "devstral:latest")
            :key-combo "C-c n r")
 ```
