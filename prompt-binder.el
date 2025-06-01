@@ -6,8 +6,36 @@
 
 (setq llm-provider (make-llm-ollama :chat-model "devstral:latest"))
 
+(defun prompt-binder-update-spinner (spinner-marker response-buffer spinner-chars)
+  (when (and spinner-marker (buffer-live-p response-buffer))
+    (with-current-buffer response-buffer
+      (save-excursion
+        (goto-char spinner-marker)
+        (delete-char 1)
+        (insert (aref spinner-chars spinner-index))
+        (setq spinner-index (mod (1+ spinner-index) (length spinner-chars)))))))
 
-(defun prompt-lib-llm-stream-to-buffer (content context name provider)
+
+(defun prompt-binder-start-spinner (spinner-marker response-buffer spinner-chars)
+  (with-current-buffer response-buffer
+    (save-excursion
+      (goto-char (point-max))
+      (insert " Waiting for response  ")
+      (setq spinner-marker (1- (point)))))
+  (setq spinner-timer (run-with-timer 0.1 0.1 (lambda () (prompt-binder-update-spinner spinner-marker response-buffer spinner-chars)))))
+
+
+(defun prompt-binder-stop-spinner (spinner-marker response-buffer)
+  (when spinner-timer
+    (cancel-timer spinner-timer)
+    (setq spinner-timer nil))
+  (when (and spinner-marker (buffer-live-p response-buffer))
+    (with-current-buffer response-buffer
+      (save-excursion
+        (goto-char spinner-marker)
+        (delete-region spinner-marker (line-end-position))))))
+
+(defun prompt-binder-llm-stream-to-buffer (content context name provider)
   (let* ((buffer-name (or name "*LLM Response*"))
          (response-buffer (get-buffer-create buffer-name))
          (start-marker nil))
@@ -23,68 +51,38 @@
 
     (let ((last-inserted-length 0)
           (spinner-chars ["⠋" "⠙" "⠹" "⠸" "⠼" "⠴" "⠦" "⠧" "⠇" "⠏"])
-          (spinner-index 0)
           (spinner-timer nil)
           (spinner-marker nil)
           (first-response-received nil))
 
-      ;; Function to update spinner
-      (defun update-spinner ()
-        (when (and spinner-marker (buffer-live-p response-buffer))
-          (with-current-buffer response-buffer
-            (save-excursion
-              (goto-char spinner-marker)
-              (delete-char 1)
-              (insert (aref spinner-chars spinner-index))
-              (setq spinner-index (mod (1+ spinner-index) (length spinner-chars)))))))
+      (progn
+        (setq spinner-index 0)
+        ;; Start the spinner
+        (prompt-binder-start-spinner spinner-marker response-buffer spinner-chars)
 
-      ;; Function to start spinner
-      (defun start-spinner ()
-        (with-current-buffer response-buffer
-          (save-excursion
-            (goto-char (point-max))
-            (insert " Waiting for response  ")
-            (setq spinner-marker (1- (point)))))
-        (setq spinner-timer (run-with-timer 0.1 0.1 #'update-spinner)))
-
-      ;; Function to stop spinner
-      (defun stop-spinner ()
-        (when spinner-timer
-          (cancel-timer spinner-timer)
-          (setq spinner-timer nil))
-        (when (and spinner-marker (buffer-live-p response-buffer))
-          (with-current-buffer response-buffer
-            (save-excursion
-              (goto-char spinner-marker)
-              (delete-region spinner-marker (line-end-position))))))
-
-      ;; Start the spinner
-      (start-spinner)
-
-      (llm-chat-streaming provider
-                          (llm-make-chat-prompt content :context context)
-                          (lambda (text)
-                            (update-spinner))
-                          (lambda (text)
-                            ;; Success callback - called when streaming is complete
-                            (with-current-buffer response-buffer
-                              (save-excursion
-                                (goto-char (point-max))
-                                (insert "\n\nResponse:\n\n")
-                                (insert text)
-                                (insert "\n\n--- Response Complete ---"))))
-                          (lambda (type message)
-                            ;; Error callback
-                            (with-current-buffer response-buffer
-                              (save-excursion
-                                (goto-char (point-max))
-                                (insert (format "\n\nError (%s): %s" type message)))))))))
-
-
-
-
-(fmakunbound 'prompt-lib-llm-stream-to-buffer)
-
+        (llm-chat-streaming provider
+                            (llm-make-chat-prompt content :context context)
+                            (lambda (text)
+                              (with-current-buffer response-buffer
+                                (save-excursion
+                                  (prompt-binder-update-spinner spinner-marker
+                                                                response-buffer spinner-chars))))
+                            (lambda (text)
+                              ;; Success callback - called when streaming is complete
+                              (with-current-buffer response-buffer
+                                (save-excursion
+                                  (prompt-binder-stop-spinner spinner-marker response-buffer)
+                                  (goto-char (point-max))
+                                  (insert "\n\nResponse:\n\n")
+                                  (insert text)
+                                  (insert "\n\n--- Response Complete ---"))))
+                            (lambda (type message)
+                              ;; Error callback
+                              (with-current-buffer response-buffer
+                                (save-excursion
+                                  (prompt-binder-stop-spinner spinner-marker response-buffer)
+                                  (goto-char (point-max))
+                                  (insert (format "\n\nError (%s): %s" type message))))))))))
 
 
 (cl-defmacro defprompt (&key function-name content context provider key-combo)
@@ -103,7 +101,7 @@ KEY-COMBO: key binding string for the function"
        (defun ,func-name ()
          ,(format "Interactive function to run prompt: %s" content)
          (interactive)
-         (prompt-lib-llm-stream-to-buffer ,content ,context ,buffer-name ,provider))
+         (prompt-binder-llm-stream-to-buffer ,content ,context ,buffer-name ,provider))
 
        ;; Bind the key combination if provided
        ,(when key-combo
