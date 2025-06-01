@@ -1,12 +1,18 @@
 ;;; prompt-binder.el --- Bind LLM prompts to key chords.   -*- lexical-binding:t -*-
+;;; Commentary:
+;;; A lightweight Emacs package that lets you quickly invoke Large Language
+;;; Model (LLM) prompts with simple key combinations.  Stream responses directly into de;;; dicated buffers with visual feedback.
+
 
 (require 'llm)
 (require 'llm-ollama)
 (require 'cl-lib)
 
+;;;; Code:
 (setq llm-provider (make-llm-ollama :chat-model "devstral:latest"))
 
 (defun prompt-binder-update-spinner (spinner-marker response-buffer spinner-chars)
+  "Starts the visual feedback spinner"
   (when (and spinner-marker (buffer-live-p response-buffer))
     (with-current-buffer response-buffer
       (save-excursion
@@ -17,6 +23,7 @@
 
 
 (defun prompt-binder-start-spinner (spinner-marker response-buffer spinner-chars)
+  "Updates spinner animation"
   (with-current-buffer response-buffer
     (save-excursion
       (goto-char (point-max))
@@ -26,6 +33,7 @@
 
 
 (defun prompt-binder-stop-spinner (spinner-marker response-buffer)
+  "Stops and cleans up spinner"
   (when spinner-timer
     (cancel-timer spinner-timer)
     (setq spinner-timer nil))
@@ -36,6 +44,7 @@
         (delete-region spinner-marker (line-end-position))))))
 
 (defun prompt-binder-llm-stream-to-buffer (content context name provider)
+  "Passes CONTENT and CONTEXT to LLM defined by PROVIDER. Handles streaming LLM response to buffer NAME."
   (let* ((buffer-name (or name "*LLM Response*"))
          (response-buffer (get-buffer-create buffer-name))
          (start-marker nil))
@@ -109,11 +118,3 @@ KEY-COMBO: key binding string for the function"
 
        ;; Return the function name for confirmation
        ',func-name)))
-
-
-
-(defprompt :function-name code-reviewer
-           :content "Please review this code for potential issues, bugs, and improvements."
-           :context (format "You are an experienced software engineer conducting a thorough code review. Focus on correctness, performance, security, and maintainability. Use the following code for your review %s" (buffer-substring-no-properties (point-min) (point-max)))
-           :provider (make-llm-ollama :chat-model "devstral:latest")
-           :key-combo "C-c n r")

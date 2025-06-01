@@ -226,17 +226,6 @@
     (when (get-buffer buffer-name)
       (kill-buffer buffer-name))))
 
-;;; Integration Test for code-reviewer
-
-(ert-deftest test-code-reviewer-function-exists ()
-  "Test that the code-reviewer function is properly defined."
-  (should (fboundp 'code-reviewer))
-  (should (commandp 'code-reviewer)))
-
-(ert-deftest test-code-reviewer-key-binding ()
-  "Test that code-reviewer has the expected key binding."
-  (should (eq (global-key-binding (kbd "C-c n r")) 'code-reviewer)))
-
 ;;; Performance and Memory Tests
 
 (ert-deftest test-multiple-concurrent-requests ()

@@ -82,10 +82,20 @@ Use the `defprompt` macro to create your own AI-powered commands:
 (defprompt :function-name find-security-bugs
            :content "Analyze this code for potential bugs and security issues"
            :context (format "You are a security-focused code auditor. Look for bugs, 
-                             vulnerabilities, and edge cases. %s" (a-custom-vector-search "delete_all('id = #{params[:user_id]}')"))
+                             vulnerabilities, and edge cases in the following code snippets %s" (a-custom-vector-search "delete_all('id = #{params[:user_id]}')"))
            :provider llm-provider
            :key-combo "C-c b f")
 ```
+
+**Code Reviewer:**
+```elisp
+(defprompt :function-name code-reviewer
+           :content "Please review this code for potential issues, bugs, and improvements."
+           :context (format "You are an experienced software engineer conducting a thorough code review. Focus on correctness, performance, security, and maintainability. Use the following code for your review %s" (buffer-substring-no-properties (point-min) (point-max)))
+           :provider (make-llm-ollama :chat-model "devstral:latest")
+           :key-combo "C-c n r")
+``
+
 
 ## API Reference
 
