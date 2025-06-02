@@ -1,16 +1,13 @@
 ;;; prompt-binder.el --- Bind LLM prompts to key chords.   -*- lexical-binding:t -*-
 ;;; Commentary:
-;;; A lightweight Emacs package that lets you quickly invoke Large Language
-;;; Model (LLM) prompts with simple key combinations.  Stream responses directly into de;;; dicated buffers with visual feedback.
-
+;;; A lightweight Emacs package that lets you quickly invoke Large Language Model (LLM);;; prompts with simple key combinations.  Pass context from Emacs into your
+;;; LLM Prompts.  Stream responses directly into dedicated buffers with
+;;; visual feedback.
 
 (require 'llm)
-(require 'llm-ollama)
 (require 'cl-lib)
 
 ;;;; Code:
-(setq llm-provider (make-llm-ollama :chat-model "devstral:latest"))
-
 (defun prompt-binder-update-spinner (spinner-marker response-buffer spinner-chars)
   "Starts the visual feedback spinner"
   (when (and spinner-marker (buffer-live-p response-buffer))
