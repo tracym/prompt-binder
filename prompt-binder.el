@@ -3,6 +3,7 @@
 ;;; A lightweight Emacs package that lets you quickly invoke Large Language Model (LLM);;; prompts with simple key combinations.  Pass context from Emacs into your
 ;;; LLM Prompts.  Stream responses directly into dedicated buffers with
 ;;; visual feedback
+;;; Keywords: llm, tools, prompt
 ;;; Version: 0.1.0
 ;;; URL: http://github.com/tracym
 ;;; Package-Requires: ((emacs "24.3") (llm "0.26.0"))
