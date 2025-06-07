@@ -1,19 +1,40 @@
 ;;; prompt-binder.el --- Bind LLM prompts to key chords and editor context   -*- lexical-binding:t -*-
-;;; Commentary:
-;;; A lightweight Emacs package that lets you quickly invoke Large Language Model (LLM);;; prompts with simple key combinations.  Pass context from Emacs into your
-;;; LLM Prompts.  Stream responses directly into dedicated buffers with
-;;; visual feedback
 ;;; Keywords: llm, tools, prompt
 ;;; Version: 0.1.0
 ;;; URL: http://github.com/tracym
 ;;; Package-Requires: ((emacs "24.3") (llm "0.26.0"))
 
+
+;; This file is free software; you can redistribute it and/or modify
+;; it under the terms of the GNU General Public License as published by
+;; the Free Software Foundation; either version 3, or (at your option)
+;; any later version.
+
+;; This file is distributed in the hope that it will be useful,
+;; but WITHOUT ANY WARRANTY; without even the implied warranty of
+;; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+;; GNU General Public License for more details.
+
+;; You should have received a copy of the GNU General Public License
+;; along with GNU Emacs.  If not, see <http://www.gnu.org/licenses/>.
+
+;;; Commentary:
+;;; A lightweight Emacs package that lets you quickly invoke Large
+;;; Language Model (LLM) prompts with simple key combinations.
+;;; Pass context from Emacs into your LLM Prompts.
+;;; Stream responses directly into dedicated buffers with visual
+;;; feedback
+
+;;;; Code:
+
 (require 'llm)
 (require 'cl-lib)
 
-;;;; Code:
 (defun prompt-binder-update-spinner (spinner-marker response-buffer spinner-chars)
-  "Starts the visual feedback spinner"
+  "Start the visual feedback spinner.
+Argument SPINNER-MARKER Location of the spinner in RESPONSE-BUFFER.
+Argument SPINNER-CHARS Array of chars used for representing the
+spinner."
   (when (and spinner-marker (buffer-live-p response-buffer))
     (with-current-buffer response-buffer
       (save-excursion
@@ -24,7 +45,10 @@
 
 
 (defun prompt-binder-start-spinner (spinner-marker response-buffer spinner-chars)
-  "Updates spinner animation"
+  "Update spinner animation.
+Argument SPINNER-MARKER Location of the spinner in RESPONSE-BUFFER.
+Argument SPINNER-CHARS Array of chars used for representing the
+spinner."
   (with-current-buffer response-buffer
     (save-excursion
       (goto-char (point-max))
@@ -34,7 +58,8 @@
 
 
 (defun prompt-binder-stop-spinner (spinner-marker response-buffer)
-  "Stops and cleans up spinner"
+  "Stops and cleans up spinner.
+Argument SPINNER-MARKER Location of the spinner in RESPONSE-BUFFER."
   (when spinner-timer
     (cancel-timer spinner-timer)
     (setq spinner-timer nil))
@@ -45,7 +70,7 @@
         (delete-region spinner-marker (line-end-position))))))
 
 (defun prompt-binder-llm-stream-to-buffer (content context name provider)
-  "Passes CONTENT and CONTEXT to LLM defined by PROVIDER. Handles streaming LLM response to buffer NAME."
+  "Passes CONTENT and CONTEXT to LLM defined by PROVIDER.  Handles streaming LLM response to buffer NAME."
   (let* ((buffer-name (or name "*LLM Response*"))
          (response-buffer (get-buffer-create buffer-name))
          (start-marker nil))
@@ -95,7 +120,7 @@
 
 
 (cl-defmacro prompt-binder-define-binding (&key function-name content context provider key-combo)
-  "Define an interactive function that calls prompt-lib-llm-stream-to-buffer.
+  "Define an interactive function that call prompt-lib-llm-stream-to-buffer.
 FUNCTION-NAME: name of the function to create
 CONTENT: the user prompt content
 CONTEXT: the system prompt/context
