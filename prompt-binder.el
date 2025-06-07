@@ -1,8 +1,11 @@
-;;; prompt-binder.el --- Bind LLM prompts to key chords.   -*- lexical-binding:t -*-
+;;; prompt-binder.el --- Bind LLM prompts to key chords and editor context   -*- lexical-binding:t -*-
 ;;; Commentary:
 ;;; A lightweight Emacs package that lets you quickly invoke Large Language Model (LLM);;; prompts with simple key combinations.  Pass context from Emacs into your
 ;;; LLM Prompts.  Stream responses directly into dedicated buffers with
-;;; visual feedback.
+;;; visual feedback
+;;; Version: 0.1.0
+;;; URL: http://github.com/tracym
+;;; Package-Requires: ((emacs "24.3") (llm "0.26.0"))
 
 (require 'llm)
 (require 'cl-lib)
@@ -70,9 +73,8 @@
                             (llm-make-chat-prompt content :context context)
                             (lambda (text)
                               (with-current-buffer response-buffer
-                                (save-excursion
-                                  (prompt-binder-update-spinner spinner-marker
-                                                                response-buffer spinner-chars))))
+                                (save-excursion (prompt-binder-update-spinner spinner-marker
+                                                                              response-buffer spinner-chars))))
                             (lambda (text)
                               ;; Success callback - called when streaming is complete
                               (with-current-buffer response-buffer
@@ -91,7 +93,7 @@
                                   (insert (format "\n\nError (%s): %s" type message))))))))))
 
 
-(cl-defmacro defprompt (&key function-name content context provider key-combo)
+(cl-defmacro prompt-binder-define-binding (&key function-name content context provider key-combo)
   "Define an interactive function that calls prompt-lib-llm-stream-to-buffer.
 FUNCTION-NAME: name of the function to create
 CONTENT: the user prompt content
@@ -115,3 +117,6 @@ KEY-COMBO: key binding string for the function"
 
        ;; Return the function name for confirmation
        ',func-name)))
+
+(provide 'prompt-binder)
+;;; prompt-binder.el ends here

@@ -56,10 +56,10 @@ See the [LLM package docs](https://github.com/ahyatt/llm) for additional informa
 
 ### Creating Custom Prompts
 
-Use the `defprompt` macro to create your own AI-powered commands:
+Use the `prompt-binder-define-binding` macro to create your own AI-powered commands:
 
 ```elisp
-(defprompt :function-name explain-code
+(prompt-binder-define-binding :function-name explain-code
            :content "Explain what this code does in simple terms"
            :context (format "You are a helpful programming tutor. Explain the 
                              following code clearly and concisely. %s" 
@@ -72,7 +72,7 @@ Use the `defprompt` macro to create your own AI-powered commands:
 
 **Documentation Generator:**
 ```elisp
-(defprompt :function-name generate-docs
+(prompt-binder-define-binding :function-name generate-docs
            :content "Generate comprehensive documentation for this code"
            :context (format "Write detailed documentation including purpose, 
                              parameters, return values, and usage examples 
@@ -84,7 +84,7 @@ Use the `defprompt` macro to create your own AI-powered commands:
 
 **Bug Hunter:**
 ```elisp
-(defprompt :function-name find-security-bugs
+(prompt-binder-define-binding :function-name find-security-bugs
            :content "Analyze this code for potential bugs and security issues"
            :context (format "You are a security-focused code auditor. Look for bugs, 
                              vulnerabilities, and edge cases in the following code 
@@ -97,7 +97,7 @@ Use the `defprompt` macro to create your own AI-powered commands:
 
 **Code Reviewer:**
 ```elisp
-(defprompt :function-name code-reviewer
+(prompt-binder-define-binding :function-name code-reviewer
            :content "Please review this code for potential issues, bugs, and improvements."
            :context (format "You are an experienced software engineer conducting a 
                              thorough code review. Focus on correctness, performance, 
@@ -111,10 +111,10 @@ Use the `defprompt` macro to create your own AI-powered commands:
 
 ## API Reference
 
-### `defprompt` Macro
+### `prompt-binder-define-binding` Macro
 
 ```elisp
-(defprompt &key function-name content context provider key-combo)
+(prompt-binder-define-binding &key function-name content context provider key-combo)
 ```
 
 **Parameters:**
