@@ -1,9 +1,8 @@
 ;;; prompt-binder.el --- Bind LLM prompts to key chords and editor context   -*- lexical-binding:t -*-
-;;; Keywords: llm, tools, prompt
-;;; Version: 0.1.0
-;;; URL: http://github.com/tracym
-;;; Package-Requires: ((emacs "24.3") (llm "0.26.0"))
-
+;; Keywords: llm, tools, prompt
+;; Version: 0.1.0
+;; URL: http://github.com/tracym
+;; Package-Requires: ((emacs "24.3") (llm "0.26.0"))
 
 ;; This file is free software; you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by
@@ -19,13 +18,13 @@
 ;; along with GNU Emacs.  If not, see <http://www.gnu.org/licenses/>.
 
 ;;; Commentary:
-;;; A lightweight Emacs package that lets you quickly invoke Large
-;;; Language Model (LLM) prompts with simple key combinations.
-;;; Pass context from Emacs into your LLM Prompts.
-;;; Stream responses directly into dedicated buffers with visual
-;;; feedback
+;; A lightweight Emacs package that lets you quickly invoke Large
+;; Language Model (LLM) prompts with simple key combinations.
+;; Pass context from Emacs into your LLM Prompts.
+;; Stream responses directly into dedicated buffers with visual
+;; feedback
 
-;;;; Code:
+;;; Code:
 
 (require 'llm)
 (require 'cl-lib)
@@ -70,25 +69,21 @@ Argument SPINNER-MARKER Location of the spinner in RESPONSE-BUFFER."
         (delete-region spinner-marker (line-end-position))))))
 
 (defun prompt-binder-llm-stream-to-buffer (content context name provider)
-  "Passes CONTENT and CONTEXT to LLM defined by PROVIDER.  Handles streaming LLM response to buffer NAME."
+  "Passes CONTENT and CONTEXT to LLM defined by PROVIDER.
+Handles streaming LLM response to buffer NAME."
   (let* ((buffer-name (or name "*LLM Response*"))
-         (response-buffer (get-buffer-create buffer-name))
-         (start-marker nil))
+         (response-buffer (get-buffer-create buffer-name)))
 
     ;; Set up the response buffer
     (with-current-buffer response-buffer
       (erase-buffer)
-      (insert (format "Prompt: %s\n\n" content))
-      (setq start-marker (point-marker)))
+      (insert (format "Prompt: %s\n\n" content)))
 
     ;; Display the buffer
     (pop-to-buffer response-buffer)
 
-    (let ((last-inserted-length 0)
-          (spinner-chars ["⠋" "⠙" "⠹" "⠸" "⠼" "⠴" "⠦" "⠧" "⠇" "⠏"])
-          (spinner-timer nil)
-          (spinner-marker nil)
-          (first-response-received nil))
+    (let ((spinner-chars ["⠋" "⠙" "⠹" "⠸" "⠼" "⠴" "⠦" "⠧" "⠇" "⠏"])
+          (spinner-marker nil))
 
       (progn
         (setq spinner-index 0)
@@ -97,7 +92,7 @@ Argument SPINNER-MARKER Location of the spinner in RESPONSE-BUFFER."
 
         (llm-chat-streaming provider
                             (llm-make-chat-prompt content :context context)
-                            (lambda (text)
+                            (lambda ()
                               (with-current-buffer response-buffer
                                 (save-excursion (prompt-binder-update-spinner spinner-marker
                                                                               response-buffer spinner-chars))))
