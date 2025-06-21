@@ -29,6 +29,9 @@
 (require 'llm)
 (require 'cl-lib)
 
+(defvar prompt-binder-spinner-index 0)
+(defvar prompt-binder-spinner-timer nil)
+
 (defun prompt-binder-update-spinner (spinner-marker response-buffer spinner-chars)
   "Start the visual feedback spinner.
 Argument SPINNER-MARKER Location of the spinner in RESPONSE-BUFFER.
@@ -39,8 +42,8 @@ spinner."
       (save-excursion
         (goto-char spinner-marker)
         (delete-char 1)
-        (insert (aref spinner-chars spinner-index))
-        (setq spinner-index (mod (1+ spinner-index) (length spinner-chars)))))))
+        (insert (aref spinner-chars prompt-binder-spinner-index))
+        (setq prompt-binder-spinner-index (mod (1+ prompt-binder-spinner-index) (length spinner-chars)))))))
 
 
 (defun prompt-binder-start-spinner (spinner-marker response-buffer spinner-chars)
@@ -53,15 +56,15 @@ spinner."
       (goto-char (point-max))
       (insert " Waiting for response  ")
       (setq spinner-marker (1- (point)))))
-  (setq spinner-timer (run-with-timer 0.1 0.1 (lambda () (prompt-binder-update-spinner spinner-marker response-buffer spinner-chars)))))
+  (setq prompt-binder-spinner-timer (run-with-timer 0.1 0.1 (lambda () (prompt-binder-update-spinner spinner-marker response-buffer spinner-chars)))))
 
 
 (defun prompt-binder-stop-spinner (spinner-marker response-buffer)
   "Stops and cleans up spinner.
 Argument SPINNER-MARKER Location of the spinner in RESPONSE-BUFFER."
-  (when spinner-timer
-    (cancel-timer spinner-timer)
-    (setq spinner-timer nil))
+  (when prompt-binder-spinner-timer
+    (cancel-timer prompt-binder-spinner-timer)
+    (setq prompt-binder-spinner-timer nil))
   (when (and spinner-marker (buffer-live-p response-buffer))
     (with-current-buffer response-buffer
       (save-excursion
@@ -86,7 +89,6 @@ Handles streaming LLM response to buffer NAME."
           (spinner-marker nil))
 
       (progn
-        (setq spinner-index 0)
         ;; Start the spinner
         (prompt-binder-start-spinner spinner-marker response-buffer spinner-chars)
 
